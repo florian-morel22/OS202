@@ -1,0 +1,273 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{wrapfig}
+\usepackage{rotating}
+%\usepackage{a4wide}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{marvosym}
+\usepackage{wasysym}
+\usepackage{amssymb}
+\usepackage{hyperref}
+%\usepackage[utf8]{inputenc}
+%\usepackage[T1]{fontenc}
+%\usepackage{polyglossia}
+%\setmainlanguage[]{french}
+\usepackage[top=30pt,bottom=50pt,left=48pt,right=46pt]{geometry}
+\usepackage{listings}
+
+\lstset{
+    language=C++
+  , frame=single
+  , basicstyle=\scriptsize
+  , keywordstyle=\color{blue}\bfseries
+  , commentstyle=\color{red}
+  , stringstyle=\color{magenta}\ttfamily
+  , backgroundcolor=\color{black!5}
+}
+
+\usepackage[dvipsnames]{xcolor}
+\usepackage{subfigure,tikz}
+\usetikzlibrary{shadows,shadows.blur, trees,matrix,arrows,decorations}
+\usetikzlibrary{decorations.pathmorphing, fadings, shapes, shapes.arrows, positioning, calc, shapes,fit}
+\usepackage{fp}
+\usepackage{pgfplots}
+\tolerance=1000
+\author{Xavier JUVIGNY}
+\date{\today}
+\title{Travaux dirigés n°3}
+
+\newtheorem{definition}{Définition}
+\newtheorem{theo}{Théorème}
+
+\definecolor{verylightgray}{rgb}{0.95 0.95 1.0}
+
+\definecolor{darkblue}{rgb}{0. 0. 0.4}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section{Produit matrice--matrice}
+
+Soient $A$ et $B$ deux matrices définies à l'aide de deux couples de vecteurs $\left\{u_{A},v_{A}\right\}$ et 
+$\left\{u_{B},v_{B}\right\}$ :
+\[
+\left\{
+	\begin{array}{lcl}
+	A & = & u_{A}.v_{A}^{T}\mbox{ soit } A_{ij} = u_{A_{i}}.v_{A_{j}} \\
+	B & = & u_{B}.v_{B}^{T}\mbox{ soit } B_{ij} = u_{B_{i}}.v_{B_{j}}
+    \end{array}
+\right..
+\]
+
+On calcule le produit matrice--vecteur C=A.B à l'aide d'un produit matrice--matrice plein (complexité de $2.n^{3}$ opérations arithmétiques)
+et on valide le résultat obtenu à l'aide de l'expression sous forme de produit tensoriel de $A$ et $B$ :
+\[
+\begin{array}{lclclcl}
+C & = & A.B & = & \left(u_{A}.v_{A}^{T}\right).\left(u_{B}.v_{B}^{T}\right) & = &  u_{A}\left(v_{A}^{T}.u_{B}\right)v_{B}^{T}\\
+ &=& u_{A}\left(v_{A}|u_{B}\right)v_{B}^{T} & = & \left(v_{A}|u_{B}\right)u_{A}.v_{B}^{T}
+ \end{array}.
+\]
+
+Soit :
+\[
+C_{ij} = \left(v_{A}|u_{B}\right)u_{A_{i}}.v_{B_{j}},
+\]
+ce qui nécessite en tout $2.n+2.n^{2}$ opérations arithmétiques (dont $2.n$ opérations pour le produit scalaire).
+
+On se propose, par étape, de paralléliser en mémoire partagée le produit matrice--matrice fourni dans le fichier \texttt{ProdMatMat.cpp}. 
+L'exécutable pour tester le produit matrice-matrice est \texttt{TestProduitMatrix.exe} :
+
+\begin{enumerate}
+	\item Mesurez le temps de calcul du produit matrice--matrice donné en donnant en entrée diverses dimensions. Essayez en particulier de prendre pour dimension 1023, 1024 et 1025 (il suffit de passer la dimension en argument à l'exécution. Par exemple \verb@./TestProductMatrix.exe 1023@ testera le produit matrice-matrice pour des matrices de dimension 1023). En vous servant des transparents du cours, expliquez clairement les temps obtenus.
+	\item \textbf{\color{blue}Première optimisation :} Permutez les  boucles en $i,j$ et $k$ jusqu'à obtenir un temps optimum pour le calcul du produit matrice--matrice (et après vous être persuadé que cela ne changera rien au résulat du calcul). Expliquez pourquoi la permutation des boucles optimale que vous avez trouvée
+	est bien la façon optimale d'ordonner les boucles en vous servant toujours du support de cours.
+	\item \textbf{\color{blue}Première parallélisation :} A l'aide d'OpenMP, parallélisez le produit matrice--matrice. Mesurez le temps obtenu en variant le nombre de threads à l'aide de la variable d'environnement \texttt{OMP\_NUM\_THREADS}. Calculez l'accélération et le résultat obtenu en fonction du nombre de threads, commentez et expliquez clairement ces résultats. 
+	\item Argumentez et donnez clairement la raison pour laquelle il est sûrement possible d'améliorer le résultat que vous avez obtenu.
+	\item \textbf{\color{blue}Deuxième optimisation :} Pour pouvoir exploiter au mieux la mémoire cache, on se propose de transformer notre produit matrice--matrice "scalaire" en produit matrice--matrice par bloc (on se servira pour le produit "bloc--bloc" de la meilleure version \textbf{séquentielle} du produit matrice--matrice obtenu précédemment).
+
+	L'idée est de décomposer les matrices $A,B$ et $C$ en sous-blocs matriciels :
+	\[
+	A = \left(
+	\begin{array}{cccc}
+	A_{11} & A_{12} & \ldots & A_{1N} \\
+	A_{21} & \ddots &        & \vdots \\
+	\vdots &        & \ddots & \vdots \\
+	A_{N1} &        &        & A_{NN}
+	\end{array}
+	\right),
+	B = \left(
+	\begin{array}{cccc}
+	B_{11} & B_{12} & \ldots & B_{1N} \\
+	B_{21} & \ddots &        & \vdots \\
+	\vdots &        & \ddots & \vdots \\
+	B_{N1} &        &        & B_{NN}
+	\end{array}
+	\right),
+	C = \left(
+	\begin{array}{cccc}
+	C_{11} & C_{12} & \ldots & C_{1N} \\
+	C_{21} & \ddots &        & \vdots \\
+	\vdots &        & \ddots & \vdots \\
+	C_{N1} &        &        & C_{NN}
+	\end{array}
+	\right),
+	\]
+
+où $A_{IJ},B_{IJ}$ et $C_{IJ}$ sont des sous--blocs possédant une taille fixée (par le programmeur ).
+
+Le produit matrice--matrice se fait alors par bloc. Pour calculer le bloc $C_{IJ}$, on calcule :
+\[
+C_{IJ} = \sum_{K=1}^{N}A_{IK}.B_{KJ}.
+\]
+
+Mettre en {\oe}uvre ce produit matrice--matrice en séquentiel puis faire varier la taille des blocs jusqu'à obtenir un optimum.
+\item Comparer le temps pris par rapport au produit matrice--matrice "scalaire". Comment interprétez vous le résultat obtenu~?
+
+\item \textbf{\color{blue}Parallélisation du produit matrice--matrice par bloc }: \`A l'aide d'OpenMP, parallélisez le produit matrice--matrice par bloc puis mesurez l'accélération parallèle en fonction du nombre de threads. Comparez avec la version scalaire parallélisée. Comment expliquez vous ce résultat ?
+\item \textbf{\color{blue}{Comparaison avec blas}}: Comparez vos résultat avec l'exécutable \texttt{produit\_matmat\_blas.exe} qui utilise un produit matrice-matrice 
+                                                     optimisé. Quel rapport de temps obtenez vous ? Quelle version est la meilleure selon vous ?
+\end{enumerate}
+
+\section{Parallélisation MPI}
+
+Ecrivez en langage Python les programmes suivants.
+
+\subsection{Circulation d'un jeton dans un anneau}
+
+Ecrivez un programme tel que :
+\begin{enumerate}
+	\item le processus de rang zéro initialise un jeton à 1 puis l'envoie au processus de rang un;
+	\item le processus de rang un reçoit le jeton, l'incrémente de un puis l'envoie au processus de rang deux;
+	\item \ldots
+	\item le processus de rang $p$ reçoit le jeton, l'incrémente de un puis l'envoie au processus de rang $p+1$ ($0<p<nbp-1$);
+	\item \ldots
+	\item le processus de rang $\mbox{nbp}-1$ reçoit le jeton, l'incrémente de un et l'envoie au processus de rang zéro;
+	\item le processus de rang zéro reçoit le jeton du processus $\mbox{nbp}-1$ et l'affiche à l'écran.
+\end{enumerate}
+
+\subsection{Calcul tr\`es approch\'e de pi}
+
+On veut calculer la valeur de pi à l'aide de l'algorithme stochastique suivant :
+\begin{itemize}
+\item on considère le carré unité
+$\left[-1;1\right]\times \left[-1;1\right]$ dans lequel on inscrit le cercle unité de centre $(0,0)$ et de rayon $1$;
+\item on génère des points aléatoirement dans le carré unité;
+\item on compte le nombre de points générés dans le carré qui sont aussi dans le cercle;
+\item soit $r$ ce nombre de points dans le cercle divisé par le nombre de points
+  total dans le carré, on calcule alors pi comme $\pi = 4.r$.
+\end{itemize}
+
+Remarquez que l'erreur faite sur pi décroit quand le nombre de points générés augmente.
+
+\begin{center}
+\begin{tikzpicture}[scale=2]
+\draw[color=black,fill=cyan] (0,0) circle (1);
+\draw[color=black] (-1,-1) -- (-1,1) -- (1,1) -- (1,-1) -- cycle;
+\draw[red] plot[only marks, mark=*, mark size=0.5, domain=-1:1, samples=400] (\x,{rnd*2-1});
+\end{tikzpicture}
+\end{center}
+
+Couper l'itération de boucle en plusieurs morceaux pouvant être exécutés par différentes tâches
+simultanément:
+\begin{itemize}
+\item chaque tâche exécute sa portion de boucle;
+\item chaque tâche peut exécuter son travail sans avoir besoin d'information des autres tâches (indépendance des données);
+\item la tâche maître (que le programmeur aura choisi parmi ses tâches) reçoit le résultat des autres
+tâches à l'aide d'échanges de message point à point;
+\item utiliser l'échange de message global adéquat pour obtenir le résultat final.
+\end{itemize}
+
+Mesurez le temps mis par les deux versions (séquentiel et parallèle) et calculez 
+l'accélération obtenue. Est-ce cohérent avec votre machine (cf. \verb|lscpu| ou gestionnaire de tâches) ?
+
+\begin{center}
+\begin{tikzpicture}[scale=2]
+\draw[color=black,fill=cyan] (0,0) circle (1);
+\draw[color=black] (-1,-1) -- (-1,1) -- (1,1) -- (1,-1) -- cycle;
+\draw[color=red,fill=red] plot[only marks, mark=*, mark size=0.5, domain=-1:1, samples=100] (\x,{rnd*2-1});
+\draw[color=green,fill=green] plot[only marks, mark=*, mark size=0.5, domain=-1:1, samples=100] (\x,{rnd*2-1});
+\draw[color=yellow, fill=yellow] plot[only marks, mark=*, mark size=0.5, domain=-1:1, samples=100] (\x,{rnd*2-1});
+\draw[color=violet, fill=violet] plot[only marks, mark=*, mark size=0.5, domain=-1:1, samples=100] (\x,{rnd*2-1});
+\draw (-0.75,-1.5) node[right,rectangle,fill=red] (t1) {task 1};
+\draw node[right, right=of t1, rectangle,fill=green] (t2) {task 2};
+\draw node[right, below=of t1, rectangle, fill=yellow] (t3) {task 3};
+\draw node[right, right=of t3, rectangle, fill=violet] (t4) {task 4};
+\end{tikzpicture}
+\end{center}
+
+\fbox{
+\begin{minipage}{\textwidth}
+\underline{Le concept} : diviser le travail parmi les tâches disponibles en communicant des données à l'aide
+d'appel à des fonctions d'envoi/réception point à point.
+\end{minipage} }
+
+\subsection{Diffusion d'un entier dans un réseau hypercube\textcolor{red}{$^{\star}$}}
+
+On veut écrire un programme qui diffuse un entier dans un réseau de n{\oe}uds de calculs dont la topologie
+est équivalente à celle d'un hypercube de dimension $d$ (et qui contient donc $2^{d}$ n{\oe}uds de calcul).
+
+\begin{enumerate}
+\item \'Ecrire un programme qui diffuse un entier dans un hyper cube de dimension 1 :
+\begin{itemize}
+\item la tâche 0 initialise un jeton à une valeur entière choisie par le programmeur et envoie cette valeur 
+à la tâche 1; 
+\item la tâche 1 reçoit la valeur du jeton de la tâche 0;
+\item les deux tâches affichent la valeur du jeton.
+\end{itemize}
+\item Diffuser le jeton généré par la tâche 0 dans un hypercube de dimension 2 de manière que cette diffusion se fasse en un minimum
+d'étapes (et donc un maximum de communications simultanées entre tâches).
+\item Faire de même pour un hypercube de dimension 3.
+\item \'Ecrire le cas général quand le cube est de dimension $d$. Le nombre d'étapes pour diffuser le jeton devra
+être égal à la dimension de l'hypercube.
+\end{enumerate}
+
+\begin{center}
+\begin{tikzpicture}
+% Cube dimension 0
+\draw (-4,0) node[fill=green,inner sep=1pt]{0};
+\draw (-4,-0.5) node{dim. 0};
+% Cube dimension 1
+\draw (-3,0) node[fill=green,inner sep=1pt](cd1_0){0} -- (-2,0) node[fill=cyan,inner sep=1pt](cd1_1){1};
+\draw (-2.5,-0.5) node{dim. 1};
+% Cube dimension 2
+\draw (-1,0) node[fill=green,inner sep=1pt](cd2_0){0} -- (0,0) node[fill=green,inner sep=1pt](cd2_1){1};
+\draw (-1,1) node[fill=cyan,inner sep=1pt](cd2_2){2} -- (0,1) node[fill=cyan,inner sep=1pt](cd2_3){3};
+\draw (cd2_0) -- (cd2_2) (cd2_1) -- (cd2_3);
+\draw (-0.5,-0.5) node{dim. 2};
+% Cube dimension 3
+\draw (1,0) node[fill=green,inner sep=1pt](cd3_0){0} -- (2,0) node[fill=green,inner sep=1pt](cd3_1){1};
+\draw (1,1) node[fill=green,inner sep=1pt](cd3_2){2} -- (2,1) node[fill=green,inner sep=1pt](cd3_3){3};
+\draw (1.5,0.5) node[fill=cyan,inner sep=1pt](cd3_4){4} -- (2.5,0.5) node[fill=cyan,inner sep=1pt](cd3_5){5};
+\draw (1.5,1.5) node[fill=cyan,inner sep=1pt](cd3_6){6} -- (2.5,1.5) node[fill=cyan,inner sep=1pt](cd3_7){7};
+\draw (cd3_0) -- (cd3_2) (cd3_1) -- (cd3_3);
+\draw (cd3_4) -- (cd3_6) (cd3_5) -- (cd3_7);
+\draw (cd3_0) -- (cd3_4) (cd3_1) -- (cd3_5) (cd3_2)--(cd3_6) (cd3_3)--(cd3_7);
+\draw (1.5,-0.5) node{dim. 3};
+% Cube de dimension 4
+\draw (6,0) node[fill=green,inner sep=1pt](cd4_0){0} -- (7,0) node[fill=green,inner sep=1pt](cd4_1){1};
+\draw (6,1) node[fill=green,inner sep=1pt](cd4_2){2} -- (7,1) node[fill=green,inner sep=1pt](cd4_3){3};
+\draw (6.5,0.5) node[fill=green,inner sep=1pt](cd4_4){4} -- (7.5,0.5) node[fill=green,inner sep=1pt](cd4_5){5};
+\draw (6.5,1.5) node[fill=green,inner sep=1pt](cd4_6){6} -- (7.5,1.5) node[fill=green,inner sep=1pt](cd4_7){7};
+\draw (cd4_0) -- (cd4_2) (cd4_1) -- (cd4_3);
+\draw (cd4_4) -- (cd4_6) (cd4_5) -- (cd4_7);
+\draw (cd4_0) -- (cd4_4) (cd4_1) -- (cd4_5) (cd4_2)--(cd4_6) (cd4_3)--(cd4_7);
+\draw (4,0.5) node[fill=cyan,inner sep=1pt](cd4_8){8} -- (5,0.5) node[fill=cyan,inner sep=1pt](cd4_9){9};
+\draw (4,1.5) node[fill=cyan,inner sep=1pt](cd4_10){10} -- (5,1.5) node[fill=cyan,inner sep=1pt](cd4_11){11};
+\draw (4.5,1) node[fill=cyan,inner sep=1pt](cd4_12){12} -- (5.5,1) node[fill=cyan,inner sep=1pt](cd4_13){13};
+\draw (4.5,2) node[fill=cyan,inner sep=1pt](cd4_14){14} -- (5.5,2) node[fill=cyan,inner sep=1pt](cd4_15){15};
+\draw (cd4_8) -- (cd4_10) (cd4_9) -- (cd4_11);
+\draw (cd4_12) -- (cd4_14) (cd4_13) -- (cd4_15);
+\draw (cd4_8) -- (cd4_12) (cd4_9) -- (cd4_13) (cd4_10)--(cd4_14) (cd4_11)--(cd4_15);
+\draw (cd4_0) -- (cd4_8) (cd4_1) -- (cd4_9) (cd4_2) -- (cd4_10) (cd4_3) -- (cd4_11) (cd4_4) -- (cd4_12) (cd4_5) -- (cd4_13) (cd4_6) -- (cd4_14) (cd4_7) -- (cd4_15);
+\draw (5.5,-0.5) node{dim. 4};
+\draw (2,-1) node{Hypercubes de dimension 0, 1, 2, 3 et 4};
+\end{tikzpicture}
+\end{center}
+
+
+\end{document}
