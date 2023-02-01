@@ -1,0 +1,13 @@
+Lancer le programme python : (pour 4 coeurs)
+    mpirun -np 4 python3 python/mandelbrot.py
+
+Transférer le fichier sur la machine de l'ENSTA : (utiliser lls, lcd... pour gérer le local)
+    sftp morel@salle.ensta.fr
+    put mandelbrot.py
+
+Accéder à la machine de l'ENSTA et run le fichier :
+    ssh -t morel@ssh.ensta.fr salle
+    mpirun -np 20 python3 mandelbrot.py
+
+
+Afficher la capacité des coeurs : htop

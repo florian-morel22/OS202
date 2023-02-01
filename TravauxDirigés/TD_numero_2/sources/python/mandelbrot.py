@@ -51,7 +51,7 @@ size = comm.Get_size()
 rank = comm.Get_rank()
 
 mandelbrot_set = MandelbrotSet(max_iterations=50,escape_radius=10)
-width, height = 10000, 10000
+width, height = 5000, 5000
 h = height//size
 
 scaleX = 3./width
