@@ -14,4 +14,3 @@ print(f"u = {u}")
 # Produit matrice-vecteur
 v = A.dot(u)
 print(f"v = {v}")
-
