@@ -6,6 +6,8 @@ from math import log
 from time import time
 import matplotlib.cm
 
+
+
 @dataclass
 class MandelbrotSet:
     max_iterations: int
