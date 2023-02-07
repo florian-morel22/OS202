@@ -54,42 +54,49 @@ rank = comm.Get_rank()
 
 mandelbrot_set = MandelbrotSet(max_iterations=50,escape_radius=10)
 width, height = 1024, 1024
-h = height//size
+h = height//(size-1)
 
 scaleX = 3./width
 scaleY = 2.25/height
 
 
+
 if rank == 0:
     deb = time()
-    convergence = [np.empty((width,h),dtype=np.double)]*size
+    convergence = [np.empty((width,h),dtype=np.double)]*(size-1)
 
-else:
-   convergence = None
+    for i in range(1, size):
+        comm.send(convergence[i-1], dest=i, tag=1)
 
-## ----- Calcul des coefficients de la matrice pour tous les threads ----- ##  
-convergence = comm.scatter(convergence, root=0)
+    results = []
+    for i in range(1, size):
+        result = comm.recv(source=i, tag=2)
+        results.append(result)
 
-for y in range(rank*h, (rank+1)*h):
-    for x in range(width):
-        c = complex(-2. + scaleX*x, -1.125 + scaleY * y)
-        convergence[x,y-rank*h] = mandelbrot_set.convergence(c,smooth=True)
-
-convergence = comm.gather(convergence,root=0)
-
-## ----- ----------------------------------------------------------- ----- ## 
-
-if rank == 0:
-    convergence = np.concatenate(tuple([convergence[i] for i in range(size)]), axis=1)
-    print('master:', convergence.shape)
+    final_result = np.concatenate(tuple(results), axis=1)
+    print('master:', final_result.shape)
 
     fin = time()
     print(f"Temps du calcul de l'ensemble de Mandelbrot : {fin-deb}")
 
     deb=time()
-    image = Image.fromarray(np.uint8(matplotlib.cm.plasma(convergence.T)*255))
+    image = Image.fromarray(np.uint8(matplotlib.cm.plasma(final_result.T)*255))
     fin = time()
     print(f"Temps de constitution de l'image : {fin-deb}")
-    image.save("mandelbrot.png")
+    
+    image.save("mandelbrotMasterSlave.png")
+
+    
+
+else:
+    convergence = comm.recv(source=0, tag=1)
+
+    for y in range(rank*h, (rank+1)*h):
+        for x in range(width):
+            c = complex(-2. + scaleX*x, -1.125 + scaleY * y)
+            convergence[x,y-rank*h] = mandelbrot_set.convergence(c,smooth=True)
+    
+    comm.send(convergence, dest=0, tag=2)
+
 
 MPI.Finalize()
