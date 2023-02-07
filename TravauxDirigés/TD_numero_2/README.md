@@ -1,9 +1,9 @@
-# TP2 de NOM Prénom
+# TP2 de MOREL et MSSELLATI
 
 `pandoc -s --toc tp2.md --css=./github-pandoc.css -o tp2.html`
 
-
-
+## Exercice 2.2
+Dans le cas sans interblocages, nous faisons tres attentions à envoyer sans attendre reponses : 2 cas possibles.  
 
 
 ## Mandelbrot 
