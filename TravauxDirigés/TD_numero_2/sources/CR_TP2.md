@@ -3,7 +3,6 @@
 
 
 
-
 ## lscpu (machine de l'ENSTA)
 
 ```
@@ -38,21 +37,22 @@ Drapaux :                               fpu vme de pse tsc msr pae mce cx8 apic 
 
 
 
-# EXERCICE 2 Produit matrice-matrice
-
-## 2.1 Question de cours 
-
-### Q1.
-
-### Q2.
 
 
-## 2.2 Question de cours n°2
+# 2.1 Question de cours
 
-## 2.3 Ensemble de mandelbrot
+(référence à la slides 28 du cours 1)
+
+### Q1. 
+Imaginons un premier scenario. Le process de rang 0 envoie à 2, celui de rang 1 n'a pas encore eu le temps d'envoyer, donc celui de rang 2 reçoit bien le message de 1. Ensuite 2 envoie à 0 et attend le message de 2, qu'il reçoit. 
+
+### Q2.  
+Dans un second scenario où l'on pourrait avoir interblocage dans le cas où les tags ne corresponderaientt pas. En effet dans le cas où le tag du send de rang 1 correponderait au tag du premier receive de rang 2, et que le tag du receive de rang 0 et send de rang 2 ne correspondent pas, on se retrouve dans une situation où 0 attend le message de 2 et 2 attend le message de 1, on est donc face à un interblocage à plus de 2 processus. 
+
+# 2.3 Ensemble de mandelbrot
 
 
-### Répartition égale entre les processus
+## **Répartition égale entre les processus**
 
 `mpirun -np 4 python3 python/mandelbrot.py`
 
@@ -79,7 +79,7 @@ Assez naturellement, on remarque une nette augmentation de la vitesse de calcul 
 
 Pour expliquer la discontinuité en nbp = 14, on peut supposer qu'il y a 12 processeurs plus performants que les autres. Lorsque nbp < 12, ces 12 processeurs performants vont automatiquement être sélectionnés pour réaliser le calcul. Lorsque nbp > 12, des processeurs moins puissants vont obigatoirement devoir réaliser des tâches. Ils vont alors faire ralentir l'exécution de la tâche globale. Lorsque nbp = 26, le temps d'exécution est redescendu. Malgré les processeurs lents, chaque processeur a moins de travail, cela diminue donc le temps d'exécution de la tâche globale.
 
-### Stratégie maître-esclave
+## **Stratégie maître-esclave**
 
 `mpirun -np 4 python3 python/mandelbrotMasterSlave.py`
 
