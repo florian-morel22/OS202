@@ -1,0 +1,44 @@
+Cours 1 
+
+Pour le rapport : exos 1, 2.1, 2.2 completement rédigés. Le 2.2 pas obligatoire.
+
+Si 4 coeurs + hyperthreading (8 COEURS virtuell), je peux m'attendre à de bonnes perfs si j'utilise 4 threads c'est perfs optimales
+
+1 double : 8 octets
+1 floatant : 4 octets
+
+lscpu pour connaitre les caracteristiques du cpus
+
+Qu. 1 : Pour une matrice de taille 1024, c'est plus long avec 1024 pourquoi ? 
+	Ici, des doubles sont stockés dans la rame
+	On a le problème sur des tailles de matrice qui sont des puissances de 2
+	REPONSE : associative memory cache des processus type intel/AMD...ds
+	Avec une puissance de 2, les modulos reviennent toujours sur la même case. Ducoup on utilise 1 seule case du cache.
+	Chaque portion de la mémoire va dans une ligne de cache modulo la mémoire.
+	On sollicite toujours la même ligne de cache car modulo 2024.
+	
+	Chaque zone de la mémoire sera mappée dans un cache.
+	
+	Avec 1025, au bout d'un moment, on change de ligne de cache (couleur) donc on ne va pas recharger à chaque fois la même ligne de cache. On va juste lire dans une autre lige de cache (une autre couleur)
+	
+	Avec 1024, c'était comme si on utilisait qu'une seule ligne de cache => c'est comme si on avait un cache beaucoup plus petit.
+	
+Qu. 2 : Le plus rapide : j, k, i
+	Objectif : optimiser le chargement des lignes de cache
+	La matrice est stockée par colonne**
+	
+	Dans j, k, i, on reste dans une colonne et on lit cahaque valeur de chaque ligne. Ces valeurs sont dans la même ligne ligne de cache donc pas besoin de recharger une ligne de cache à chaque fois. Quand on charge une ligne de cache, on a les n valeurs utiles dedans, on les utilise toutes avant de recharger une autre ligne de cache.
+	
+Qu. 3 : 
+
+	Mes bloques doivent entrer en cache. Comparer la taille de bloc max avec la taille du cache.
+	
+	
+	
+	
+	
+	
+INSTALL libblas.so : sudo apt-get install libopenblas-dev
+
+
+

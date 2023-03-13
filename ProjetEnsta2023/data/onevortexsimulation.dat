@@ -1,0 +1,10 @@
+# Grille cartésienne : coord gauche bas + nbre cellules par direction + pas du maillage (même pas dans chaque direction)
+-10.0 -10.0 100 100 0.2
+# Génération des particules : 0 = régulièrement espacées sur la grille, 1 = régulièrement espacé dans une zone rectangulaire donnée (gauche bas droit haut pour coords) + nbre particules
+0 400000
+# Nombre de vortex
+1
+# Coordonnées initiales des vortex + intensité (négatif = tourne sens inverse)
+0. 0. 0.5
+# Vortex stationnaires (0) ou mobiles (1)
+0
