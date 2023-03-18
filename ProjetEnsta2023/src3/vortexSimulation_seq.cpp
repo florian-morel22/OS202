@@ -123,16 +123,16 @@ int main(int nargs, char *argv[]) {
 
   Graphisme::Screen myScreen(
       {resx, resy}, {grid.getLeftBottomVertex(), grid.getRightTopVertex()});
-  bool animate = true;
+  bool animate = false;
   double dt = 0.1;
 
-  int NB_IT = 100;
+  int NB_IT = 500;
   double fps_moy = 0;
   double part_calc = 0;
   double temps_tot = 0;
 
-  for (int it = 0; it < NB_IT; ++it) {
-    auto start_global = std::chrono::system_clock::now();
+  while (myScreen.isOpen()) {
+    auto start_total = std::chrono::system_clock::now();
     bool advance = false;
     // on inspecte tous les évènements de la fenêtre qui ont été émis depuis
     // la précédente itération
@@ -161,17 +161,17 @@ int main(int nargs, char *argv[]) {
 
     /* CALCULE */
 
+    auto start_calc = std::chrono::system_clock::now();
     if (animate | advance) {
-      auto start_calc = std::chrono::system_clock::now();
       if (isMobile) {
         cloud = Numeric::solve_RK4_movable_vortices(dt, grid, vortices, cloud);
       } else {
         cloud = Numeric::solve_RK4_fixed_vortices(dt, grid, cloud);
       }
-      auto end_calc = std::chrono::system_clock::now();
-      std::chrono::duration<double> diff_calc = end_calc - start_calc;
-      part_calc += diff_calc.count();
     }
+
+    auto end_calc = std::chrono::system_clock::now();
+    std::chrono::duration<double> diff_calc = end_calc - start_calc;
 
     /* AFFICHAGE */
     myScreen.clear(sf::Color::Black);
@@ -181,21 +181,19 @@ int main(int nargs, char *argv[]) {
                           50, double(myScreen.getGeometry().second - 96)});
     myScreen.displayVelocityField(grid, vortices);
     myScreen.displayParticles(grid, vortices, cloud);
-    auto end_global = std::chrono::system_clock::now();
-    std::chrono::duration<double> diff_global = end_global - start_global;
+    auto end_total = std::chrono::system_clock::now();
+    std::chrono::duration<double> diff_total = end_total - start_total;
     std::string str_fps =
-        std::string("FPS : ") + std::to_string(1. / diff_global.count());
+        std::string("FPS : ") + std::to_string(1. / diff_total.count());
     myScreen.drawText(str_fps,
                       Geometry::Point<double>{
                           300, double(myScreen.getGeometry().second - 96)});
-    temps_tot += diff_global.count();
-    fps_moy += 1. / diff_global.count();
-    myScreen.display();
-  }
-  printf("FPS moyen : %f\n", fps_moy / NB_IT);
-  printf("part de calcul : %f\n", part_calc / temps_tot * 100.);
 
-  myScreen.close();
+    myScreen.display();
+
+    std::cout << "perc calc : " << diff_calc.count() / diff_total.count() * 100
+              << std::endl;
+  }
 
   return EXIT_SUCCESS;
 }

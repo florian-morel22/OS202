@@ -121,81 +121,31 @@ int main(int nargs, char *argv[]) {
 
   grid.updateVelocityField(vortices);
 
-  Graphisme::Screen myScreen(
-      {resx, resy}, {grid.getLeftBottomVertex(), grid.getRightTopVertex()});
   bool animate = true;
+  bool advance = false;
   double dt = 0.1;
 
-  int NB_IT = 100;
-  double fps_moy = 0;
-  double part_calc = 0;
-  double temps_tot = 0;
+  int NB_IT = 50;
 
+  auto start_global = std::chrono::system_clock::now();
   for (int it = 0; it < NB_IT; ++it) {
-    auto start_global = std::chrono::system_clock::now();
-    bool advance = false;
-    // on inspecte tous les évènements de la fenêtre qui ont été émis depuis
-    // la précédente itération
-
-    /* EVENT */
-    sf::Event event;
-    while (myScreen.pollEvent(event)) {
-      // évènement "fermeture demandée" : on ferme la fenêtre
-      if (event.type == sf::Event::Closed)
-        myScreen.close();
-      if (event.type == sf::Event::Resized) {
-        // on met à jour la vue, avec la nouvelle taille de la fenêtre
-        myScreen.resize(event);
-      }
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::P))
-        animate = true;
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-        animate = false;
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
-        dt *= 2;
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-        dt /= 2;
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-        advance = true;
-    }
-
-    /* CALCULE */
 
     if (animate | advance) {
-      auto start_calc = std::chrono::system_clock::now();
       if (isMobile) {
         cloud = Numeric::solve_RK4_movable_vortices(dt, grid, vortices, cloud);
       } else {
         cloud = Numeric::solve_RK4_fixed_vortices(dt, grid, cloud);
       }
-      auto end_calc = std::chrono::system_clock::now();
-      std::chrono::duration<double> diff_calc = end_calc - start_calc;
-      part_calc += diff_calc.count();
     }
-
-    /* AFFICHAGE */
-    myScreen.clear(sf::Color::Black);
-    std::string strDt = std::string("Time step : ") + std::to_string(dt);
-    myScreen.drawText(strDt,
-                      Geometry::Point<double>{
-                          50, double(myScreen.getGeometry().second - 96)});
-    myScreen.displayVelocityField(grid, vortices);
-    myScreen.displayParticles(grid, vortices, cloud);
-    auto end_global = std::chrono::system_clock::now();
-    std::chrono::duration<double> diff_global = end_global - start_global;
-    std::string str_fps =
-        std::string("FPS : ") + std::to_string(1. / diff_global.count());
-    myScreen.drawText(str_fps,
-                      Geometry::Point<double>{
-                          300, double(myScreen.getGeometry().second - 96)});
-    temps_tot += diff_global.count();
-    fps_moy += 1. / diff_global.count();
-    myScreen.display();
   }
-  printf("FPS moyen : %f\n", fps_moy / NB_IT);
-  printf("part de calcul : %f\n", part_calc / temps_tot * 100.);
 
-  myScreen.close();
+  auto end_global = std::chrono::system_clock::now();
+  double temps_tot = std::chrono::duration_cast<std::chrono::microseconds>(
+                         end_global - start_global)
+                         .count();
+
+  std::cout << "Temps moyen par itération : " << temps_tot / 1000000 / NB_IT
+            << " s" << std::endl;
 
   return EXIT_SUCCESS;
 }

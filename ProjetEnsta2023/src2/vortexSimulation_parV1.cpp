@@ -138,6 +138,10 @@ int main(int nargs, char *argv[]) {
     Graphisme::Screen myScreen(
         {resx, resy}, {grid.getLeftBottomVertex(), grid.getRightTopVertex()});
 
+    std::vector<double> dataVect;
+    dataVect.resize(vortices.numberOfVortices() * 3 +
+                    cloud.numberOfPoints() * 2);
+
     while (myScreen.isOpen()) {
       auto start = std::chrono::system_clock::now();
       bool advance = false;
@@ -151,13 +155,9 @@ int main(int nargs, char *argv[]) {
         if (event.type == sf::Event::Closed) {
           myScreen.close();
           bool run = false;
-
-          // MPI_Recv(&vorticesVect[0], vortices.numberOfVortices() * 3,
-          //          MPI_DOUBLE, 1, 10, commGlob, MPI_STATUS_IGNORE);
-          // MPI_Recv(&cloudVect[0], cloud.numberOfPoints() * 2, MPI_DOUBLE, 1,
-          // 11, commGlob,
-          //          MPI_STATUS_IGNORE);
-
+          MPI_Recv(&dataVect[0],
+                   vortices.numberOfVortices() * 3 + cloud.numberOfPoints() * 2,
+                   MPI_DOUBLE, 1, 10, commGlob, MPI_STATUS_IGNORE);
           MPI_Send(&run, 1, MPI_LOGICAL, 1, 20, commGlob);
         }
 
@@ -173,9 +173,11 @@ int main(int nargs, char *argv[]) {
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
           dt *= 2;
+          MPI_Send(&dt, 1, MPI_DOUBLE, 1, 21, commGlob);
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
           dt /= 2;
+          MPI_Send(&dt, 1, MPI_DOUBLE, 1, 21, commGlob);
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
           advance = true;
@@ -185,26 +187,20 @@ int main(int nargs, char *argv[]) {
       /* CALCUL */
 
       if (animate | advance) {
-        MPI_Send(&dt, 1, MPI_DOUBLE, 1, 21, commGlob);
-        std::vector<double> vorticesVect;
-        vorticesVect.resize(vortices.numberOfVortices() * 3);
-        MPI_Recv(&vorticesVect[0], vortices.numberOfVortices() * 3, MPI_DOUBLE,
-                 1, 10, commGlob, MPI_STATUS_IGNORE);
+        dataVect.clear();
+        MPI_Recv(&dataVect[0],
+                 vortices.numberOfVortices() * 3 + cloud.numberOfPoints() * 2,
+                 MPI_DOUBLE, 1, 10, commGlob, MPI_STATUS_IGNORE);
         for (std::size_t i = 0; i < vortices.numberOfVortices(); ++i) {
-          vortices.setVortex(i,
-                             Geometry::Point<double>{vorticesVect[3 * i],
-                                                     vorticesVect[3 * i + 1]},
-                             vorticesVect[3 * i + 2]);
+          vortices.setVortex(
+              i, Geometry::Point<double>{dataVect[3 * i], dataVect[3 * i + 1]},
+              dataVect[3 * i + 2]);
         }
         grid.updateVelocityField(vortices);
 
-        std::vector<double> cloudVect;
-        cloudVect.resize(cloud.numberOfPoints() * 2);
-        MPI_Recv(&cloudVect[0], cloud.numberOfPoints() * 2, MPI_DOUBLE, 1, 11,
-                 commGlob, MPI_STATUS_IGNORE);
-        for (std::size_t i = 0; i < cloud.numberOfPoints(); ++i) {
-          cloud[i].x = cloudVect[2 * i];
-          cloud[i].y = cloudVect[2 * i + 1];
+        for (std::size_t i = 0; i < cloud.size(); ++i) {
+          cloud[i].x = dataVect[vortices.numberOfVortices() * 3 + 2 * i];
+          cloud[i].y = dataVect[vortices.numberOfVortices() * 3 + 2 * i + 1];
         }
 
         advance = false;
@@ -227,53 +223,48 @@ int main(int nargs, char *argv[]) {
                             300, double(myScreen.getGeometry().second - 96)});
       myScreen.display();
     }
-    bool stop = true;
-    MPI_Send(&stop, 1, MPI_LOGICAL, 1, 30, commGlob);
   }
 
   else if (rank == 1) {
-    bool stop = false;
     bool run = true;
     MPI_Request req;
 
+    std::vector<double> dataVect;
+
     MPI_Irecv(&run, 1, MPI_LOGICAL, 0, 20, commGlob, &req);
 
+    MPI_Irecv(&dt, 1, MPI_DOUBLE, 0, 21, commGlob, &req);
+
+    int k = 0;
     while (run) {
-      MPI_Request req2;
-      MPI_Request req5;
-      MPI_Irecv(&stop, 1, MPI_LOGICAL, 0, 30, commGlob, &req2);
+      k = k + 1;
+
+      printf("k = %d v1\n", k);
 
       if (isMobile) {
-        MPI_Request req3;
-        MPI_Request req4;
-        MPI_Irecv(&dt, 1, MPI_DOUBLE, 0, 21, commGlob, &req3);
         cloud = Numeric::solve_RK4_movable_vortices(dt, grid, vortices, cloud);
 
-        std::vector<double> vorticesVect;
+        /* Decomposition de cloud qui est un std::vector<std::vector<double>> */
+
+        dataVect.clear();
         for (std::size_t i = 0; i < vortices.numberOfVortices(); ++i) {
-          vorticesVect.push_back(vortices.getCenter(i).x);
-          vorticesVect.push_back(vortices.getCenter(i).y);
-          vorticesVect.push_back(vortices.getIntensity(i));
+          dataVect.push_back(vortices.getCenter(i).x);
+          dataVect.push_back(vortices.getCenter(i).y);
+          dataVect.push_back(vortices.getIntensity(i));
         }
-        MPI_Isend(&vorticesVect[0], vortices.numberOfVortices() * 3, MPI_DOUBLE,
-                  0, 10, commGlob, &req4);
+        for (std::size_t i = 0; i < cloud.size(); ++i) {
+          dataVect.push_back(cloud[i].x);
+          dataVect.push_back(cloud[i].y);
+        }
+
+        MPI_Send(&dataVect[0],
+                 vortices.numberOfVortices() * 3 + cloud.size() * 2, MPI_DOUBLE,
+                 0, 10, commGlob);
 
       } else {
         cloud = Numeric::solve_RK4_fixed_vortices(dt, grid, cloud);
       }
-
-      /* Decomposition de cloud qui est un std::vector<std::vector<double>> */
-
-      std::vector<double> cloudVect;
-      for (std::size_t i = 0; i < cloud.numberOfPoints(); ++i) {
-        cloudVect.push_back(cloud[i].x);
-        cloudVect.push_back(cloud[i].y);
-      }
-      MPI_Isend(&cloudVect[0], cloud.numberOfPoints() * 2, MPI_DOUBLE, 0, 11,
-                commGlob, &req5);
-      if (stop)
-        break;
-      MPI_Wait(&req5, MPI_STATUS_IGNORE);
+      printf("k = %d v2\n", k);
     }
   }
 
