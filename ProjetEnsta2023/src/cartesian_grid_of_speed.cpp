@@ -1,6 +1,7 @@
 #include "cartesian_grid_of_speed.hpp"
 #include <cassert>
 #include <iostream>
+#include <omp.h>
 
 using namespace Numeric;
 
@@ -19,6 +20,7 @@ void CartesianGridOfSpeed::updateVelocityField(
     Simulation::Vortices const &t_vortices) {
   using point = Simulation::Vortices::point;
   double halfStep = 0.5 * m_step;
+#pragma omp parallel for
   for (std::size_t iRow = 0; iRow < m_height; ++iRow) {
     double yP = m_bottom + iRow * m_step + halfStep;
     for (std::size_t jCol = 0; jCol < m_width; ++jCol) {

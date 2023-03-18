@@ -126,7 +126,7 @@ int main(int nargs, char *argv[]) {
   bool animate = true;
   double dt = 0.1;
 
-  int NB_IT = 500;
+  int NB_IT = 100;
   double fps_moy = 0;
   double part_calc = 0;
   double temps_tot = 0;
