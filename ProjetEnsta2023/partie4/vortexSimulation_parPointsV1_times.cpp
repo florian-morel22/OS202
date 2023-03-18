@@ -1,6 +1,7 @@
 ////////////////////////////////////
 // parallélisation du calcul du déplacement des points
 // Ne fonctionne que si isMobile = 0
+// Ajout d'un système de chronométrage
 ////////////////////////////////////
 
 #include "cartesian_grid_of_speed.hpp"

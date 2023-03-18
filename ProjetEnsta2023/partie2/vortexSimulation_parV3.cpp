@@ -1,3 +1,8 @@
+////////////////////////////////////
+// Séparation affichage graphique et calcul
+// Fonctionne pour isMobile = 0 et isMobile = 1
+////////////////////////////////////
+
 #include "cartesian_grid_of_speed.hpp"
 #include "cloud_of_points.hpp"
 #include "runge_kutta.hpp"

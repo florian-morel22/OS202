@@ -1,3 +1,9 @@
+////////////////////////////////////
+// Séparation affichage graphique et calcul
+// Des problèmes d'ordres non reçus par le processus de calcul lorsque la
+//        simulation est en pause
+////////////////////////////////////
+
 #include "cartesian_grid_of_speed.hpp"
 #include "cloud_of_points.hpp"
 #include "runge_kutta.hpp"

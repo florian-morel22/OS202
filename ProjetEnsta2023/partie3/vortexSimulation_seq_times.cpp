@@ -1,3 +1,9 @@
+////////////////////////////////////
+// parallélisation en mémoire partagée du calcul du déplacement des points et
+//    celui du champ de vitesse
+// système de chronométrage
+////////////////////////////////////
+
 #include "cartesian_grid_of_speed.hpp"
 #include "cloud_of_points.hpp"
 #include "runge_kutta.hpp"

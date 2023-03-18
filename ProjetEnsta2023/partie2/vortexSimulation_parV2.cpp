@@ -1,3 +1,8 @@
+////////////////////////////////////
+// Séparation affichage graphique et calcul
+// Ne fonctionne que pour isMobile = 0 (vortex fixes)
+////////////////////////////////////
+
 #include "cartesian_grid_of_speed.hpp"
 #include "cloud_of_points.hpp"
 #include "runge_kutta.hpp"

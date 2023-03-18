@@ -1,6 +1,8 @@
 ////////////////////////////////////
 // parallélisation du calcul du déplacement des points
 // Ne fonctionne que si isMobile = 0
+// Ajout d'un système de chronométrage
+// Partie graphique retirée pour l'exécution sur la machine de l'ENSTA
 ////////////////////////////////////
 
 #include "cartesian_grid_of_speed.hpp"

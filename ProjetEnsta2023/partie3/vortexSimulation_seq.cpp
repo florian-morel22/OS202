@@ -1,3 +1,8 @@
+////////////////////////////////////
+// parallélisation en mémoire partagée du calcul du déplacement des points et
+//    celui du champ de vitesse
+////////////////////////////////////
+
 #include "cartesian_grid_of_speed.hpp"
 #include "cloud_of_points.hpp"
 #include "runge_kutta.hpp"
@@ -161,7 +166,6 @@ int main(int nargs, char *argv[]) {
 
     /* CALCULE */
 
-    auto start_calc = std::chrono::system_clock::now();
     if (animate | advance) {
       if (isMobile) {
         cloud = Numeric::solve_RK4_movable_vortices(dt, grid, vortices, cloud);
@@ -169,9 +173,6 @@ int main(int nargs, char *argv[]) {
         cloud = Numeric::solve_RK4_fixed_vortices(dt, grid, cloud);
       }
     }
-
-    auto end_calc = std::chrono::system_clock::now();
-    std::chrono::duration<double> diff_calc = end_calc - start_calc;
 
     /* AFFICHAGE */
     myScreen.clear(sf::Color::Black);
@@ -190,9 +191,6 @@ int main(int nargs, char *argv[]) {
                           300, double(myScreen.getGeometry().second - 96)});
 
     myScreen.display();
-
-    std::cout << "perc calc : " << diff_calc.count() / diff_total.count() * 100
-              << std::endl;
   }
 
   return EXIT_SUCCESS;
